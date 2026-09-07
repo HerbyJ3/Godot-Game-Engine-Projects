@@ -42,12 +42,21 @@ checks all three.
 
 ## Verifying a change
 
+All four run from inside the `Second Shift/` directory:
+
 ```sh
 godot --headless --path . --import                          # assets + parse
 godot --headless --path . --script res://tests/run_tests.gd # unit tests
-bun ../second-shift-js/../tools/trace_js.mjs                # see HANDOFF.md
+
+# JS parity — the two outputs must be byte-identical
+bun tools/trace_js.mjs > /tmp/js.txt                        # or: node tools/trace_js.mjs
+godot --headless --path . --script res://tools/trace.gd \
+  | grep -v '^Godot Engine' | grep -v '^$' > /tmp/gd.txt
+diff /tmp/js.txt /tmp/gd.txt && echo "PARITY OK"
+
+# full playthrough; drop `xvfb-run -a` if you have a display
 xvfb-run -a godot --path . --rendering-driver opengl3 \
-  --script res://tools/smoke.gd -- /tmp/shots               # plays a full round
+  --script res://tools/smoke.gd -- /tmp/shots
 ```
 
 If you touched `logic.gd`, run the **parity trace** (HANDOFF.md § Verifying).
