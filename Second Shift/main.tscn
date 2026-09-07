@@ -1,0 +1,34 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Texture2D" path="res://assets/art/home.png" id="2_home"]
+[ext_resource type="Script" path="res://scripts/world.gd" id="3_world"]
+[ext_resource type="Script" path="res://scripts/ruth.gd" id="4_ruth"]
+[ext_resource type="Script" path="res://scripts/foreground.gd" id="5_fg"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="6_hud"]
+
+[node name="Main" type="Node2D"]
+process_mode = 3
+script = ExtResource("1_main")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Background" type="Sprite2D" parent="World"]
+centered = false
+texture = ExtResource("2_home")
+
+[node name="Overlays" type="Node2D" parent="World"]
+script = ExtResource("3_world")
+
+[node name="Ruth" type="Node2D" parent="World"]
+script = ExtResource("4_ruth")
+
+[node name="Foreground" type="Node2D" parent="World"]
+script = ExtResource("5_fg")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Screen" type="Control" parent="HUD"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("6_hud")
