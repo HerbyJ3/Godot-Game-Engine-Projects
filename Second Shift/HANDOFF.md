@@ -246,12 +246,13 @@ godot --path "Second Shift"                 # play it
 
 ---
 
-## 5b. The kitchen counter run — the map geometry problem
+## 5b. The map geometry fix (done)
 
-Found while adding furniture occlusion, and worth understanding before doing
-any more work on the map.
+Found while adding furniture occlusion, fixed in the same pass. Worth reading
+before doing any more work on the map, because the same drift may exist in
+props nobody has looked at yet.
 
-**She is not walking over the furniture. She is standing inside it.**
+**The bug: she was not walking over the furniture. She was standing inside it.**
 
 Several walkway access nodes sit on top of the prop they belong to, rather than
 on the floor in front of it:
@@ -273,24 +274,43 @@ from the screen entirely. Occlusion did not cause this — it revealed it.
 `(137, 57)–(217, 195)`. The tables were tuned by feel against a game where
 furniture never occluded anything, not traced from the art.
 
-### What fixing it involves
+### What was changed
 
-The kitchen already has the right corridor: `kitchenBL (178, 213)` →
-`kitchenBR (422, 213)` runs along the floor directly in front of the counter.
-So the three appliance nodes want to move down onto `y = 213`, not somewhere
-new. The toy box needs an extra node, because the walkway graph is strictly
-orthogonal and moving `toyboxNode` down would make its edge to `couchNode`
-diagonal.
+The kitchen already had the right corridor at `y = 213`, running along the floor
+in front of the counter, so the appliance anchors moved down onto it rather than
+somewhere new. `kitchenBL` and `kitchenEntryN` were folded away and the kitchen
+became one straight orthogonal run:
 
-Then `FOOTPRINTS` for those props gets re-derived from the painted art, and the
-props can be added back to `props.gd` and given cutouts.
+```
+kitchenEntry(422,177) — kitchenBR(422,213) — sinkNode(380,213)
+  — stoveNode(274,213) — fridgeNode(178,213) — { kBLd(178,253), babyTop(100,213) }
+```
 
-**This is a rules change, not a presentation change.** `NODES` and `FOOTPRINTS`
-live in `logic_data.gd` and feed the deterministic simulation, so moving them
-changes walk distances and timings — the JavaScript parity trace WILL diverge,
-and legitimately so. That is the moment to retire the trace's authority (see
-§3a); `tests/logic_test.gd`, `purity_test.gd` and `props_test.gd` become the
-regression net from then on.
+`sinkNode` sits at x=380 rather than 356 to clear the dining chair painted at
+x 327–357. `toyboxNode` moved to (810, 473) — the floor gap between the couch
+and the box — which keeps its edge to `couchNode` horizontal, so no extra node
+was needed.
+
+`FOOTPRINTS` were then traced from the painted art. The fridge is painted at
+x 139–217, y 60–198 but its collision box was `(125,95)–(174,158)`; the toy box
+meets the floor at y 515 but stopped at y 466, so she could walk into its front
+half. `OBJECTS` had drifted too — the "Sink" clickable was at (369, 87), up on
+the backsplash rather than on the basin at (362, 129).
+
+### Why the parity trace still passes
+
+This is a rules change: `NODES`, `FOOTPRINTS` and `OBJECTS` feed the
+deterministic simulation, so walk distances and timings all moved — **462 of
+the tracer's 1600 steps differ from the pre-change baseline.**
+
+Rather than retire the trace, the *same* table edits were mirrored into
+`second-shift-js/src/logic.js`. The two implementations still produce
+byte-identical output, which now proves something more useful than before: the
+change was purely geometric, with no logic drift smuggled in alongside it.
+
+Keeping the JS reference in step costs about ten lines per table change and is
+worth it while the tables are still moving. Once you change actual *rules*
+(rather than coordinates), retire it deliberately — do not let it rot.
 
 ### The guard that is already in place
 
@@ -299,8 +319,20 @@ regression net from then on.
 object. Low props are meant to occlude her — the laundry basket covering her
 shins is the effect working correctly — so only torso-and-head cases fail.
 
-Verified by re-adding the fridge: `prop 'fridge' covers 109px of her while she
-stands at 'fridgeNode' to use 'fridge'`.
+Verified by re-adding the fridge before the fix: `prop 'fridge' covers 109px of
+her while she stands at 'fridgeNode' to use 'fridge'`.
+
+### What still needs a cutout, and what does not
+
+After the fix, the fridge, stove and sink can never occlude her — she stands at
+y=213 and they meet the floor at y 188–198, so she is always in front of them.
+Occlusion entries for them would never fire, and cutout art for them would never
+be drawn. They are deliberately absent from `props.gd`.
+
+The two props that DO want cutouts are the **laundry basket** (she reaches into
+it, and it should cover her shins) and the **toy box** (she now stands beside
+it; its rectangle also spans the wall above, so the fallback takes a bite out of
+her shoulder).
 
 ## 6. Suggested next steps
 

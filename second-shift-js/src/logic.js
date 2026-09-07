@@ -59,13 +59,14 @@ const NODES = {
   hallBottom:  { x: 475, y: 600 },
 
   // kitchen: top appliance row (y=137), right entry (x=422), mid corridor (y=213)
-  fridgeNode:  { x: 178, y: 137 },
-  stoveNode:   { x: 274, y: 137 },
-  sinkNode:    { x: 356, y: 137 },
-  kitchenEntryN:{x: 422, y: 137 },
+  // The appliance anchors sit on the y=213 floor corridor IN FRONT of the
+  // counter run, not on the counters. They used to be at y=137, which stood
+  // her in the sink basin and on top of the hob.
+  fridgeNode:  { x: 178, y: 213 },
+  stoveNode:   { x: 274, y: 213 },
+  sinkNode:    { x: 380, y: 213 },
   kitchenEntry:{ x: 422, y: 177 },
   kitchenBR:   { x: 422, y: 213 },
-  kitchenBL:   { x: 178, y: 213 },
   kBLd:        { x: 178, y: 253 },
   tableNode:   { x: 216, y: 253 },
   babyTop:     { x: 100, y: 213 },
@@ -93,7 +94,7 @@ const NODES = {
   // living corner (y=473)
   livingEntry: { x: 573, y: 473 },
   couchNode:   { x: 699, y: 473 },
-  toyboxNode:  { x: 877, y: 473 },
+  toyboxNode:  { x: 810, y: 473 },
 };
 
 const EDGES = [
@@ -102,18 +103,15 @@ const EDGES = [
   ["hallTop", "hallMid"],
   ["hallMid", "hallLow"],
   ["hallLow", "hallBottom"],
-  // kitchen grid
-  ["fridgeNode", "stoveNode"],
-  ["stoveNode", "sinkNode"],
-  ["sinkNode", "kitchenEntryN"],
-  ["kitchenEntryN", "kitchenEntry"],
-  ["kitchenEntry", "kitchenBR"],
+  // kitchen grid — one straight run along the floor in front of the counters
   ["kitchenEntry", "hallTop"],
-  ["kitchenBR", "kitchenBL"],
-  ["kitchenBL", "kBLd"],
+  ["kitchenEntry", "kitchenBR"],
+  ["kitchenBR", "sinkNode"],
+  ["sinkNode", "stoveNode"],
+  ["stoveNode", "fridgeNode"],
+  ["fridgeNode", "kBLd"],
   ["kBLd", "tableNode"],
-  ["kitchenBL", "fridgeNode"],
-  ["kitchenBL", "babyTop"],
+  ["fridgeNode", "babyTop"],
   ["babyTop", "babyNode"],
   // office grid
   ["officeEntryN", "officeEntry"],
@@ -272,9 +270,9 @@ function nearestEdge(pos) {
 
 const FOOTPRINTS = {
   // kitchen
-  fridge:    { x0: 125, y0: 95,  x1: 174, y1: 158 },
-  stove:     { x0: 258, y0: 95,  x1: 316, y1: 125 },
-  sink:      { x0: 330, y0: 90,  x1: 410, y1: 125 },
+  fridge:    { x0: 139, y0: 160, x1: 217, y1: 198 },
+  stove:     { x0: 247, y0: 160, x1: 320, y1: 193 },
+  sink:      { x0: 320, y0: 150, x1: 407, y1: 188 },
   table:     { x0: 230, y0: 228, x1: 300, y1: 278 },
   windowWall:{ x0: 58,  y0: 150, x1: 125, y1: 190 },
   babyChair: { x0: 112, y0: 235, x1: 148, y1: 258 },
@@ -292,7 +290,7 @@ const FOOTPRINTS = {
   studyDesk: { x0: 775, y0: 218, x1: 848, y1: 260 },
   // living
   couch:     { x0: 615, y0: 370, x1: 775, y1: 460 },
-  toyBox:    { x0: 845, y0: 400, x1: 910, y1: 466 },
+  toyBox:    { x0: 840, y0: 422, x1: 926, y1: 515 },
 };
 
 const FOOT_RX = 4; // feet-point pad — she may overlap drawn tops, never bases
@@ -322,9 +320,9 @@ function slideMove(px, py, nx, ny) {
 
 const OBJECTS = {
   // KITCHEN (top-left of the painted home)
-  fridge:   { id: "fridge",   station: "kitchen", x: 153, y: 108, hitW: 56, hitH: 98, label: "Fridge" },
-  counter:  { id: "counter",  station: "kitchen", x: 369, y: 87,  hitW: 44, hitH: 48, label: "Sink" },
-  stove:    { id: "stove",    station: "kitchen", x: 287, y: 89,  hitW: 58, hitH: 60, label: "Stove" },
+  fridge:   { id: "fridge",   station: "kitchen", x: 178, y: 129, hitW: 78, hitH: 138, label: "Fridge" },
+  counter:  { id: "counter",  station: "kitchen", x: 362, y: 129, hitW: 84, hitH: 50, label: "Sink" },
+  stove:    { id: "stove",    station: "kitchen", x: 283, y: 145, hitW: 73, hitH: 95, label: "Stove" },
   cabinet:  { id: "cabinet",  station: "kitchen", x: 277, y: 36,  hitW: 80, hitH: 42, label: "Cabinet" },
   formula:  { id: "formula",  station: "kitchen", x: 265, y: 253, hitW: 44, hitH: 44, label: "Kitchen table" },
   kettle:   { id: "kettle",   station: "kitchen", x: 293, y: 80,  hitW: 34, hitH: 36, label: "Kettle" },
@@ -352,7 +350,7 @@ const OBJECTS = {
 
   // KIDS — anchor posts they act out next to
   windowWall: { id: "windowWall", station: "kitchen", x: 91,  y: 151, hitW: 66, hitH: 80, label: "Window wall" },
-  toyBox:     { id: "toyBox",     station: "armchair",x: 877, y: 434, hitW: 64, hitH: 64, label: "Toy box" },
+  toyBox:     { id: "toyBox",     station: "armchair",x: 883, y: 468, hitW: 86, hitH: 93, label: "Toy box" },
   studyDesk:  { id: "studyDesk",  station: "office",  x: 810, y: 233, hitW: 80, hitH: 60, label: "Kids' desk" },
 };
 

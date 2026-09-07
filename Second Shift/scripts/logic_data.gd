@@ -54,13 +54,17 @@ const NODES := {
 	"hallBottom": Vector2(475, 600),
 
 	# kitchen: top appliance row (y=137), right entry (x=422), mid corridor (y=213)
-	"fridgeNode": Vector2(178, 137),
-	"stoveNode": Vector2(274, 137),
-	"sinkNode": Vector2(356, 137),
-	"kitchenEntryN": Vector2(422, 137),
+	# The appliance anchors sit on the y=213 floor corridor IN FRONT of the
+	# counter run, not on the counters themselves. The painted counters end at
+	# y~188-198 and the terracotta floor starts at y~200, so this is the first
+	# walkable line below them. (They used to be at y=137, which put her
+	# standing in the sink basin and on top of the hob — see HANDOFF.md 5b.)
+	"fridgeNode": Vector2(178, 213),
+	"stoveNode": Vector2(274, 213),
+	# Shifted right of the dining chair at x~327-357.
+	"sinkNode": Vector2(380, 213),
 	"kitchenEntry": Vector2(422, 177),
 	"kitchenBR": Vector2(422, 213),
-	"kitchenBL": Vector2(178, 213),
 	"kBLd": Vector2(178, 253),
 	"tableNode": Vector2(216, 253),
 	"babyTop": Vector2(100, 213),
@@ -88,7 +92,9 @@ const NODES := {
 	# living corner (y=473)
 	"livingEntry": Vector2(573, 473),
 	"couchNode": Vector2(699, 473),
-	"toyboxNode": Vector2(877, 473),
+	# Beside the toy box, in the floor gap between it and the couch — it used
+	# to be at x=877, which stood her inside the box among the bears.
+	"toyboxNode": Vector2(810, 473),
 }
 
 const EDGES := [
@@ -97,18 +103,15 @@ const EDGES := [
 	["hallTop", "hallMid"],
 	["hallMid", "hallLow"],
 	["hallLow", "hallBottom"],
-	# kitchen grid
-	["fridgeNode", "stoveNode"],
-	["stoveNode", "sinkNode"],
-	["sinkNode", "kitchenEntryN"],
-	["kitchenEntryN", "kitchenEntry"],
-	["kitchenEntry", "kitchenBR"],
+	# kitchen grid — one straight run along the floor in front of the counters
 	["kitchenEntry", "hallTop"],
-	["kitchenBR", "kitchenBL"],
-	["kitchenBL", "kBLd"],
+	["kitchenEntry", "kitchenBR"],
+	["kitchenBR", "sinkNode"],
+	["sinkNode", "stoveNode"],
+	["stoveNode", "fridgeNode"],
+	["fridgeNode", "kBLd"],
 	["kBLd", "tableNode"],
-	["kitchenBL", "fridgeNode"],
-	["kitchenBL", "babyTop"],
+	["fridgeNode", "babyTop"],
 	["babyTop", "babyNode"],
 	# office grid
 	["officeEntryN", "officeEntry"],
@@ -196,9 +199,12 @@ const OBJECT_FACING := {
 
 const FOOTPRINTS := {
 	# kitchen
-	"fridge": Vector4(125, 95, 174, 158),
-	"stove": Vector4(258, 95, 316, 125),
-	"sink": Vector4(330, 90, 410, 125),
+	# Traced from home.png: the fridge is painted at x 139-217, y 60-198, the
+	# range at x 247-320, y 98-193, and the sink counter at x 320-407,
+	# y 110-188. These are the FLOOR strips under them.
+	"fridge": Vector4(139, 160, 217, 198),
+	"stove": Vector4(247, 160, 320, 193),
+	"sink": Vector4(320, 150, 407, 188),
 	"table": Vector4(230, 228, 300, 278),
 	"windowWall": Vector4(58, 150, 125, 190),
 	"babyChair": Vector4(112, 235, 148, 258),
@@ -216,7 +222,9 @@ const FOOTPRINTS := {
 	"studyDesk": Vector4(775, 218, 848, 260),
 	# living
 	"couch": Vector4(615, 370, 775, 460),
-	"toyBox": Vector4(845, 400, 910, 466),
+	# The box is painted at x 840-926 and meets the floor at y 515; the old
+	# box stopped at y 466 and she could walk into its front half.
+	"toyBox": Vector4(840, 422, 926, 515),
 }
 
 const FOOT_RX := 4.0  # feet-point pad — she may overlap drawn tops, never bases
@@ -228,9 +236,9 @@ const FOOT_RY := 3.0
 
 const OBJECTS := {
 	# KITCHEN (top-left of the painted home)
-	"fridge": {"id": "fridge", "station": "kitchen", "x": 153, "y": 108, "hitW": 56, "hitH": 98, "label": "Fridge"},
-	"counter": {"id": "counter", "station": "kitchen", "x": 369, "y": 87, "hitW": 44, "hitH": 48, "label": "Sink"},
-	"stove": {"id": "stove", "station": "kitchen", "x": 287, "y": 89, "hitW": 58, "hitH": 60, "label": "Stove"},
+	"fridge": {"id": "fridge", "station": "kitchen", "x": 178, "y": 129, "hitW": 78, "hitH": 138, "label": "Fridge"},
+	"counter": {"id": "counter", "station": "kitchen", "x": 362, "y": 129, "hitW": 84, "hitH": 50, "label": "Sink"},
+	"stove": {"id": "stove", "station": "kitchen", "x": 283, "y": 145, "hitW": 73, "hitH": 95, "label": "Stove"},
 	"cabinet": {"id": "cabinet", "station": "kitchen", "x": 277, "y": 36, "hitW": 80, "hitH": 42, "label": "Cabinet"},
 	"formula": {"id": "formula", "station": "kitchen", "x": 265, "y": 253, "hitW": 44, "hitH": 44, "label": "Kitchen table"},
 	"kettle": {"id": "kettle", "station": "kitchen", "x": 293, "y": 80, "hitW": 34, "hitH": 36, "label": "Kettle"},
@@ -258,7 +266,7 @@ const OBJECTS := {
 
 	# KIDS — anchor posts they act out next to
 	"windowWall": {"id": "windowWall", "station": "kitchen", "x": 91, "y": 151, "hitW": 66, "hitH": 80, "label": "Window wall"},
-	"toyBox": {"id": "toyBox", "station": "armchair", "x": 877, "y": 434, "hitW": 64, "hitH": 64, "label": "Toy box"},
+	"toyBox": {"id": "toyBox", "station": "armchair", "x": 883, "y": 468, "hitW": 86, "hitH": 93, "label": "Toy box"},
 	"studyDesk": {"id": "studyDesk", "station": "office", "x": 810, "y": 233, "hitW": 80, "hitH": 60, "label": "Kids' desk"},
 }
 

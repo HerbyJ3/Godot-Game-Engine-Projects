@@ -55,23 +55,29 @@ const PROPS := {
 	# exactly right — it occludes her shins and reads as reaching in.
 	"basket": {"region": Rect2(40, 508, 66, 70), "base_y": 575.0, "needs_cutout": true},
 
-	# ── NOT LISTED, ON PURPOSE: fridge, stove, sink, toyBox, highChair ─────
+	# ── the toy box: she now stands BESIDE it, so it occludes her properly ─
+	# Painted at x 840-926, meeting the floor at y 515. Her anchor moved to
+	# (810, 473), in the gap between the couch and the box, so the box covers
+	# the right side of her — which is exactly right. It wants a real cutout:
+	# the rectangle also spans the wall above the box, so the fallback takes a
+	# bite out of her shoulder.
+	"toyBox": {"region": Rect2(838, 386, 90, 132), "base_y": 515.0, "needs_cutout": true},
+
+	# ── NOT LISTED, ON PURPOSE: fridge, stove, sink, highChair ─────────────
 	#
 	# Each of these BLOCKS her (they have FOOTPRINTS entries) but must not
 	# occlude her yet, because her walkway access node is inside the prop's
 	# own art rather than on the floor in front of it:
 	#
-	#   fridgeNode (178, 137)   inside the fridge body      (art y 57..195)
-	#   stoveNode  (274, 137)   on top of the hob           (art y 95..195)
-	#   sinkNode   (356, 137)   standing in the basin       (art y 100..185)
-	#   toyboxNode (877, 473)   inside the toy box          (art y 386..490)
+	# Not because of a bug any more — their anchors were moved onto the floor
+	# corridor in front of the counter run, so the original problem is fixed.
+	# They are absent because occlusion for them is now MOOT: she stands at
+	# y=213 and the counters meet the floor at y 188..198, so she is always in
+	# front of them and can never be behind one. An entry here would never
+	# fire, and a cutout for them would never be drawn.
 	#
-	# Without occlusion she simply draws over them, which reads as "at the
-	# stove" at a glance. Switch occlusion on and she is drawn BEHIND a prop
-	# she is standing in the middle of — she vanishes completely at the
-	# fridge. That is worse than the bug it fixes, so these stay off until
-	# their access nodes move onto the floor and their FOOTPRINTS are
-	# re-derived from the art. See HANDOFF.md § "The kitchen counter run".
+	# The high chair is the same story at y=253 against a floor line of 262 —
+	# marginal, and it covers only her ankles. Left out until it is worth it.
 }
 
 
