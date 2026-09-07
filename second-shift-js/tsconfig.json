@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["es2022"],
+    "types": ["@cloudflare/workers-types"],
+
+    // Non-negotiable: strict null checks alone remove a whole class of runtime
+    // bugs, and this code handles input from untrusted clients.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+
+    // logic.js stays plain JS (see src/logic.d.ts for why); it is type-checked
+    // through its declaration file, not by compiling the .js itself.
+    "allowJs": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src", "tests", "scripts", "vitest.config.ts"]
+}

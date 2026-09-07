@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Second Shift — a quiet time-management game</title>
+    <meta property="og:title" content="Second Shift" />
+    <meta property="og:description" content="It's 7:55. The kitchen needs her, the laundry needs her, the phone needs her. Click through the morning — and watch what happens to the one task that is hers alone." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og.png" />
+    <meta name="theme-color" content="#F3E9D2" />
+    <link rel="icon" href="/favicon.ico" type="image/png" />
+    <style>
+      :root {
+        --bg: #F3E9D2;          /* warm cream */
+        --ink: #4A3526;         /* dark-brown outlines */
+        --dim: #9A8A78;
+        --line: #D8C9B0;
+        --terracotta: #D97E4A;
+        --sunny: #F2B33D;
+        --sage: #8FAE7B;
+        --rose: #D98A94;
+        --paper: rgba(255, 251, 240, 0.92);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Nunito", "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
+        padding: 12px;
+      }
+      #wrap {
+        width: 100%;
+        max-width: 1080px;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 960 / 640;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(74, 53, 38, 0.16), 0 2px 8px rgba(74, 53, 38, 0.1);
+        cursor: default;
+        background: var(--bg);
+      }
+      canvas { display: block; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <div id="stage">
+        <canvas id="game" width="960" height="640"></canvas>
+      </div>
+    </div>
+    <script type="module" src="/client.js?v=8"></script>
+  </body>
+</html>
