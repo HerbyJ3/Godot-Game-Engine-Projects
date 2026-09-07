@@ -1,41 +1,43 @@
-## Depth sorting, the way the painted art allows it.
+## Depth: the props that redraw ON TOP of Ruth.
 ##
-## `home.png` is exactly world-sized, so re-drawing a furniture-shaped rect
-## FROM the background AT its own position paints that furniture back over
-## whatever was drawn in between — which is Ruth. Each cut carries the `baseY`
-## where the object meets the floor: when her feet are above that line she is
-## standing behind the object, so the cut redraws and occludes her.
+## `home.png` already contains every prop painted in place, so a prop she is
+## standing BEHIND is the only case that needs anything drawn — the background
+## is correct for everything else. This layer sits above her in the scene and
+## redraws exactly those props.
 ##
-## This is `FG_CUTS` / `drawForeground` from public/client.js, kept literally
-## rather than replaced with `y_sort_enabled`. The rects are hand-tuned to the
-## painted image; y-sorting only becomes the better answer once each prop is
-## its own texture.
+## Two ways to draw one, chosen per prop in `props.gd`:
+##
+##   * an alpha CUTOUT, drawn at the prop's own position — it lands over its
+##     own painted copy, so only the furniture's silhouette covers her;
+##   * failing that, the prop's RECTANGLE re-blitted out of `home.png`. This is
+##     the original trick from the browser build. It works, but a rectangle
+##     near a neighbour also redraws the neighbour, so her head can disappear
+##     while she stands beside a tall prop rather than behind it.
+##
+## Dropping `assets/art/props/<id>.png` next to a manifest entry upgrades that
+## prop from the second to the first with no code change.
 extends Node2D
 
 const World := preload("res://scripts/world.gd")
+const Props := preload("res://scripts/props.gd")
 
-## x, y, w, h of the region in home.png; baseY is the floor contact line.
-const CUTS := [
-	{"rect": Rect2(222, 214, 86, 74), "baseY": 285.0},   # kitchen table
-	{"rect": Rect2(610, 362, 172, 102), "baseY": 462.0}, # couch
-	{"rect": Rect2(582, 92, 180, 80), "baseY": 168.0},   # office desk
-	{"rect": Rect2(642, 135, 62, 70), "baseY": 202.0},   # desk chair
-	{"rect": Rect2(766, 196, 90, 70), "baseY": 262.0},   # kids' desk
-	{"rect": Rect2(72, 398, 80, 74), "baseY": 468.0},    # washer
-	{"rect": Rect2(150, 398, 80, 74), "baseY": 468.0},   # dryer
-]
-
-## The client-drawn nursery props occlude her the same way; their bases sit at
-## roughly y=567.
+## The client-drawn nursery props (crib, changing table, pail) are not in the
+## painted image at all — `world.gd` draws them — so they occlude her the same
+## way, off their shared floor line.
 const NURSERY_BASE_Y := 567.0
 
 @onready var game: Node = owner
 
 var _home: Texture2D
+## id -> Texture2D, resolved once. A prop with no cutout maps to null and takes
+## the region path; `assets/art/props/` is only scanned at load.
+var _cutouts := {}
 
 
 func _ready() -> void:
 	_home = load("res://assets/art/home.png")
+	for id in Props.PROPS:
+		_cutouts[id] = Props.texture_for(id)
 
 
 func _process(_delta: float) -> void:
@@ -48,10 +50,30 @@ func _draw() -> void:
 		return
 	var feet_y: float = game.ruth_feet_y()
 
-	for cut in CUTS:
-		if feet_y < float(cut["baseY"]):
-			var r: Rect2 = cut["rect"]
-			draw_texture_rect_region(_home, r, r)
+	for id in Props.sorted_ids():
+		var prop: Dictionary = Props.PROPS[id]
+		# Her feet above the floor line means she is behind it.
+		if feet_y >= float(prop["base_y"]):
+			continue
+		var region: Rect2 = prop["region"]
+		var cutout: Texture2D = _cutouts.get(id, null)
+		if cutout != null:
+			# Cutouts are authored at their region's size and position, so they
+			# need no offset — they land on their own painted copy.
+			draw_texture(cutout, prop.get("pos", region.position))
+		else:
+			draw_texture_rect_region(_home, region, region)
 
 	if feet_y < NURSERY_BASE_Y:
 		World.draw_nursery(self, v, float(Time.get_ticks_msec()))
+
+
+## How many props are still on the rectangle fallback. Printed by the smoke
+## test so the art backlog is visible rather than something you notice later
+## as a graphical glitch.
+func pending_cutouts() -> Array:
+	var pending := []
+	for id in Props.PROPS:
+		if _cutouts.get(id, null) == null and bool(Props.PROPS[id].get("needs_cutout", false)):
+			pending.append(id)
+	return pending

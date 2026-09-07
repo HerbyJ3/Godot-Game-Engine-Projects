@@ -246,6 +246,62 @@ godot --path "Second Shift"                 # play it
 
 ---
 
+## 5b. The kitchen counter run — the map geometry problem
+
+Found while adding furniture occlusion, and worth understanding before doing
+any more work on the map.
+
+**She is not walking over the furniture. She is standing inside it.**
+
+Several walkway access nodes sit on top of the prop they belong to, rather than
+on the floor in front of it:
+
+| Node | Position | Where that actually is |
+|---|---|---|
+| `sinkNode` | (356, 137) | **in the sink basin** |
+| `stoveNode` | (274, 137) | **on the hob** |
+| `fridgeNode` | (178, 137) | **inside the fridge body** (art spans y 57–195) |
+| `toyboxNode` | (877, 473) | **inside the toy box**, among the bears |
+
+With nothing drawing over her this reads as "standing at the stove" and nobody
+notices. The moment a prop occludes her it becomes obvious: she is drawn behind
+furniture she is standing in the middle of, and at the fridge she disappears
+from the screen entirely. Occlusion did not cause this — it revealed it.
+
+`FOOTPRINTS` has the same drift. The fridge's collision box is
+`(125, 95)–(174, 158)`, but the fridge is *painted* at roughly
+`(137, 57)–(217, 195)`. The tables were tuned by feel against a game where
+furniture never occluded anything, not traced from the art.
+
+### What fixing it involves
+
+The kitchen already has the right corridor: `kitchenBL (178, 213)` →
+`kitchenBR (422, 213)` runs along the floor directly in front of the counter.
+So the three appliance nodes want to move down onto `y = 213`, not somewhere
+new. The toy box needs an extra node, because the walkway graph is strictly
+orthogonal and moving `toyboxNode` down would make its edge to `couchNode`
+diagonal.
+
+Then `FOOTPRINTS` for those props gets re-derived from the painted art, and the
+props can be added back to `props.gd` and given cutouts.
+
+**This is a rules change, not a presentation change.** `NODES` and `FOOTPRINTS`
+live in `logic_data.gd` and feed the deterministic simulation, so moving them
+changes walk distances and timings — the JavaScript parity trace WILL diverge,
+and legitimately so. That is the moment to retire the trace's authority (see
+§3a); `tests/logic_test.gd`, `purity_test.gd` and `props_test.gd` become the
+regression net from then on.
+
+### The guard that is already in place
+
+`tests/props_test.gd` fails any prop whose art would cover more than 70px of her
+128px height at an anchor she can stand on, naming the prop, the node and the
+object. Low props are meant to occlude her — the laundry basket covering her
+shins is the effect working correctly — so only torso-and-head cases fail.
+
+Verified by re-adding the fridge: `prop 'fridge' covers 109px of her while she
+stands at 'fridgeNode' to use 'fridge'`.
+
 ## 6. Suggested next steps
 
 1. **Play it on a real display.** Nothing substitutes for this.
