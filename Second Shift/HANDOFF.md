@@ -332,7 +332,44 @@ be drawn. They are deliberately absent from `props.gd`.
 The two props that DO want cutouts are the **laundry basket** (she reaches into
 it, and it should cover her shins) and the **toy box** (she now stands beside
 it; its rectangle also spans the wall above, so the fallback takes a bite out of
-her shoulder).
+her shoulder). Both now have them — see below.
+
+### Making a cutout: `tools/make_cutout.gd`
+
+```sh
+godot --headless --path . --script res://tools/make_cutout.gd -- toyBox basket
+```
+
+Cuts a prop out of `home.png` into an alpha PNG at `assets/art/props/<id>.png`,
+sized to its manifest region, which is all `foreground.gd` needs to start using
+it. No service, no network, and it can be re-run after any art change.
+
+It works because the painted art has a dark outline around every object, which
+is exactly what a flood fill stops at. It seeds from the region's border pixels
+(floor or wall by construction), grows inward while each step stays within
+`TOLERANCE` of the pixel it came from, then keeps only the largest connected
+component. That last step matters: the fill also stops at the skirting board and
+the floor's own line work, so without it you get thin stray streaks and, at the
+toy box, a toy car sitting on the floor beside it — all of which would draw over
+her as debris.
+
+`TOLERANCE` (0.055) was tuned against the toy box, the hardest case: a light
+wooden box against a light wall. Raise it and the fill leaks through soft
+outlines; lower it and a halo of floor stays around the prop.
+
+### Why not Higgsfield for this
+
+It was tried first and the generation itself worked — upload via `media_upload`
+presigned URLs, `remove_background`, both jobs completed. **The results could not
+be retrieved:** this environment's egress policy denies CONNECT to both
+`d8j0ntlcm91z4.cloudfront.net` and `d2ol7oe51mr4n9.cloudfront.net`, so the
+finished PNGs were unreachable (importing them back with `media_import_url` just
+moves them to the other blocked domain).
+
+From a machine without that restriction the Higgsfield route works fine. But for
+cutting a prop out of art you already have, the local tool is the better answer
+anyway: it uses the original painted pixels rather than a re-rendered
+approximation, it is deterministic, and it costs nothing to re-run.
 
 ## 6. Suggested next steps
 
