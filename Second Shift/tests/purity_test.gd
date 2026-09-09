@@ -122,55 +122,9 @@ func test_validate_action_refuses_junk() -> void:
 	eq(Logic.validate_action(s, "ruth", {"type": "pause"})["ok"], true, "a bare heartbeat passes")
 
 
-func test_every_task_step_targets_a_real_object() -> void:
-	# The single most likely way to break the game while adding content: a
-	# TASKS entry pointing at an object id that does not exist. It would sit
-	# there un-clickable with no error.
-	var data := preload("res://scripts/logic_data.gd")
-	for key in data.TASKS:
-		var cfg: Dictionary = data.TASKS[key]
-		for step in cfg["steps"]:
-			if step == null or step["target"] == null:
-				continue
-			var target: String = step["target"]
-			check(data.OBJECTS.has(target), "TASKS.%s targets unknown object `%s`" % [key, target])
-			check(data.OBJECT_NODE.has(target), "object `%s` has no walkway access node" % target)
-			check(data.OBJECT_FACING.has(target), "object `%s` has no arrival facing" % target)
-		# A chain scores through stepScore, which must line up with the steps.
-		if cfg.has("stepScore"):
-			eq((cfg["stepScore"] as Array).size(), (cfg["steps"] as Array).size(),
-				"TASKS.%s stepScore must have one entry per step" % key)
-		# Every wait slot must be a null step, and every null step a wait slot.
-		var waits: Dictionary = cfg.get("waitAfter", {})
-		for i in (cfg["steps"] as Array).size():
-			var is_null_step: bool = cfg["steps"][i] == null
-			var is_wait_slot: bool = waits.has(i - 1)
-			eq(is_null_step, is_wait_slot,
-				"TASKS.%s step %d: a null step and a waitAfter entry must come in pairs" % [key, i])
-
-
-func test_every_object_is_reachable_on_the_walkway_graph() -> void:
-	# A clickable whose access node is not connected to the rest of the graph
-	# would strand her: the router would return a one-node path and she would
-	# never arrive.
-	var data := preload("res://scripts/logic_data.gd")
-	var start := "hallMid"
-	for obj_id in data.OBJECTS:
-		check(data.OBJECT_NODE.has(obj_id), "object `%s` has no access node" % obj_id)
-		if not data.OBJECT_NODE.has(obj_id):
-			continue
-		var node: String = data.OBJECT_NODE[obj_id]
-		check(data.NODES.has(node), "object `%s` names a node `%s` that does not exist" % [obj_id, node])
-		var path: Array = Logic._dijkstra(start, node)
-		check(path.size() > 0 and path[path.size() - 1] == node,
-			"no walkway route from %s to `%s` (%s)" % [start, obj_id, node])
-
-
-func test_no_object_anchor_stands_inside_furniture() -> void:
-	# She stops AT the access node. If that node is inside a blocked footprint
-	# the slide-collision would shove her out and she would never "arrive".
-	var data := preload("res://scripts/logic_data.gd")
-	for node_id in data.NODES:
-		var n: Vector2 = data.NODES[node_id]
-		is_null(Logic._inside_footprint(float(n.x), float(n.y)),
-			"walkway node `%s` sits inside a blocked footprint" % node_id)
+# NOTE: the map assertions that used to live here — every step targets a real
+# object, every object has an access node and a facing, every object is
+# reachable, no anchor sits inside furniture — moved to `nav_test.gd` when the
+# hand-authored walkway graph was replaced by the derived grid. They got
+# stronger in the move: reachability is now checked between every PAIR of
+# props rather than from one hardcoded node.

@@ -24,6 +24,8 @@ class_name Logic
 extends RefCounted
 
 const D := preload("res://scripts/logic_data.gd")
+const Level := preload("res://scripts/levels/her_morning.gd")
+const Nav := preload("res://scripts/nav.gd")
 
 # ── 32-bit integer arithmetic ──────────────────────────────────────────────
 # The RNG below is mulberry32, which is defined over 32-bit wrapping integers.
@@ -95,6 +97,28 @@ static func _nullish(d: Dictionary, k) -> bool:
 
 static func _take_last(arr: Array, n: int) -> Array:
 	return arr.slice(maxi(0, arr.size() - n))
+
+
+## A prop's visual centre — where the glow ring sits and where a bounce rings.
+static func _prop_centre(id: String) -> Vector2:
+	var art: Rect2 = Level.PROPS[id]["art"]
+	return art.position + art.size * 0.5
+
+
+## The clickable list the renderer draws, derived from the level. Kept in the
+## shape the browser client used (x/y/hitW/hitH) so the HUD and the input
+## router did not have to change when the map system was replaced.
+static func _objects_view() -> Dictionary:
+	var out := {}
+	for id in Level.PROPS:
+		var prop: Dictionary = Level.PROPS[id]
+		var centre := _prop_centre(id)
+		var hit: Vector2 = prop["hit"]
+		out[id] = {
+			"id": id, "station": prop["station"], "label": prop["label"],
+			"x": centre.x, "y": centre.y, "hitW": hit.x, "hitH": hit.y,
+		}
+	return out
 
 
 static func _empty_order() -> Dictionary:
@@ -171,105 +195,27 @@ static func _clone_tasks(tasks: Dictionary) -> Dictionary:
 
 
 # ── the walkway network ────────────────────────────────────────────────────
-
-## Dijkstra — shortest path BY DISTANCE over the orthogonal grid, never fewest
-## hops. Kept rather than swapped for NavigationAgent2D: the node graph encodes
-## hand-tuned behaviour (she never cuts a corner through a doorway, never
-## back-steps) that a navmesh would silently change.
-static func _dijkstra(from_id: String, to_id: String) -> Array:
-	if from_id == to_id:
-		return [from_id]
-	var dist := {from_id: 0.0}
-	var prev := {from_id: null}
-	var open := {}
-	for id in D.NODES:
-		open[id] = true
-
-	while not open.is_empty():
-		var cur = null
-		var best := INF
-		for id in open:
-			var d: float = dist.get(id, INF)
-			if d < best:
-				best = d
-				cur = id
-		if cur == null or best == INF:
-			break
-		open.erase(cur)
-		if cur == to_id:
-			break
-		for edge in D.EDGES:
-			var nxt = null
-			if edge[0] == cur:
-				nxt = edge[1]
-			elif edge[1] == cur:
-				nxt = edge[0]
-			if nxt == null or not open.has(nxt):
-				continue
-			var a: Vector2 = D.NODES[edge[0]]
-			var b: Vector2 = D.NODES[edge[1]]
-			var w := _hyp(float(a.x) - float(b.x), float(a.y) - float(b.y))
-			var alt := best + w
-			if alt < float(dist.get(nxt, INF)):
-				dist[nxt] = alt
-				prev[nxt] = cur
-
-	if not prev.has(to_id):
-		return [from_id]
-	var path := [to_id]
-	var p = prev[to_id]
-	while p != null:
-		path.push_front(p)
-		p = prev[p]
-	return path
-
-
-static func _path_length_ids(ids: Array) -> float:
-	var total := 0.0
-	for i in range(1, ids.size()):
-		var a: Vector2 = D.NODES[ids[i]]
-		var b: Vector2 = D.NODES[ids[i - 1]]
-		total += _hyp(float(a.x) - float(b.x), float(a.y) - float(b.y))
-	return total
-
-
-## The corridor edge nearest to a position, with the projection point onto it.
-## Entering the graph via this edge can never cross a wall or footprint: the
-## edge IS walkable corridor, and she is standing next to it.
-static func _nearest_edge(px: float, py: float) -> Dictionary:
-	var best := {}
-	for edge in D.EDGES:
-		var a: Vector2 = D.NODES[edge[0]]
-		var b: Vector2 = D.NODES[edge[1]]
-		var ax := float(a.x)
-		var ay := float(a.y)
-		var abx := float(b.x) - ax
-		var aby := float(b.y) - ay
-		var len2 := abx * abx + aby * aby
-		if len2 == 0.0:
-			len2 = 1.0
-		var u := ((px - ax) * abx + (py - ay) * aby) / len2
-		u = clampf(u, 0.0, 1.0)
-		var qx := ax + abx * u
-		var qy := ay + aby * u
-		var d := _hyp(px - qx, py - qy)
-		if best.is_empty() or d < float(best["d"]):
-			best = {"aId": edge[0], "bId": edge[1], "px": qx, "py": qy, "d": d}
-	return best
-
+# Deleted. Routing used to be Dijkstra over 34 hand-placed nodes joined by 34
+# hand-written edges, every number typed by a person looking at a picture with
+# nothing to check them — which is how `sinkNode` came to stand her in the sink
+# basin. `nav.gd` now derives the grid, the routes and the stand-at anchors
+# from the level data. See ROADMAP.md §4.
 
 # ── blocked footprints ─────────────────────────────────────────────────────
 
 ## The floor rectangle she is standing in, or null. Base-of-object rectangles
 ## only: a tall fridge blocks the floor under it, not the wall above it.
 static func _inside_footprint(x: float, y: float) -> Variant:
-	for k in D.FOOTPRINTS:
-		var f: Vector4 = D.FOOTPRINTS[k]
+	for id in Level.PROPS:
+		var prop: Dictionary = Level.PROPS[id]
+		if not bool(prop["blocks"]):
+			continue
+		var f: Rect2 = prop["foot"]
 		if (
-			x + D.FOOT_RX > float(f.x)
-			and x - D.FOOT_RX < float(f.z)
-			and y + D.FOOT_RY > float(f.y)
-			and y - D.FOOT_RY < float(f.w)
+			x + D.FOOT_RX > f.position.x
+			and x - D.FOOT_RX < f.end.x
+			and y + D.FOOT_RY > f.position.y
+			and y - D.FOOT_RY < f.end.y
 		):
 			return f
 	return null
@@ -330,9 +276,9 @@ static func _enqueue(queue: Array, tasks: Dictionary, rng: int, key: String, t: 
 		"burned": false,
 	}
 	if key == "kids":
-		var pick := _roll_int(rng, 0, D.KID_SPOTS.size() - 1)
+		var pick := _roll_int(rng, 0, Level.KID_SPOTS.size() - 1)
 		var kids: Dictionary = next_tasks["kids"]
-		kids["kidSpot"] = D.KID_SPOTS[pick["value"]]
+		kids["kidSpot"] = Level.KID_SPOTS[pick["value"]]
 		return {"queue": next_queue, "tasks": next_tasks, "rng": pick["seed"]}
 	return {"queue": next_queue, "tasks": next_tasks, "rng": rng}
 
@@ -539,9 +485,9 @@ static func _tick(state: Dictionary, dt_sec: float) -> Dictionary:
 ## Resolve a click at an object — she has already arrived; decide what the
 ## click means against live tasks. Returns {state, acted, bounce?, ding?}.
 static func _resolve_click(state: Dictionary, object_id: String) -> Dictionary:
-	if not D.OBJECTS.has(object_id):
+	if not Level.PROPS.has(object_id):
 		return {"state": state, "acted": false}
-	var obj: Dictionary = D.OBJECTS[object_id]
+	var obj_centre := _prop_centre(object_id)
 	var next := state
 
 	if object_id == "couch":
@@ -617,7 +563,7 @@ static func _resolve_click(state: Dictionary, object_id: String) -> Dictionary:
 		# Email is uninterruptible: once she's seated at the desk, clicks
 		# elsewhere are bounces.
 		if key != "email" and bool(next["player"]["seated"]) and not _nullish(next["tasks"], "email"):
-			return {"state": next, "acted": false, "bounce": _pt(obj["x"], obj["y"])}
+			return {"state": next, "acted": false, "bounce": _pt(obj_centre.x, obj_centre.y)}
 		# ARRIVING → WORKING: she has stopped at the anchor, turns to face the
 		# object, and the step runs for its full duration. Nothing commits until
 		# the work FINISHES (_commit_work) — walking away abandons the step with
@@ -625,7 +571,7 @@ static func _resolve_click(state: Dictionary, object_id: String) -> Dictionary:
 		var player := _clone_player(next["player"])
 		player["anim"] = {"task": key, "kind": step_def["anim"], "startedAt": next["t"]}
 		player["busyUntil"] = float(next["t"]) + float(step_def["dur"])
-		player["facing"] = D.OBJECT_FACING.get(object_id, "down")
+		player["facing"] = Nav.facing_for(object_id)
 		player["working"] = {
 			"key": key,
 			"stepIdx": ts["stepIdx"],
@@ -640,7 +586,7 @@ static func _resolve_click(state: Dictionary, object_id: String) -> Dictionary:
 			"ding": {"key": key, "stepIdx": ts["stepIdx"], "completes": false},
 		}
 
-	return {"state": next, "acted": false, "bounce": _pt(obj["x"], obj["y"])}
+	return {"state": next, "acted": false, "bounce": _pt(obj_centre.x, obj_centre.y)}
 
 
 ## The work FINISHED: commit the step — advance the chain, award points, arm
@@ -752,52 +698,32 @@ static func _commit_work(state: Dictionary) -> Dictionary:
 	return out
 
 
-## Route her to an object's access node.
+## Route her to a prop, over the derived walkable grid.
 ##
-## She enters the graph through the corridor edge she is standing on
-## (projection onto it — a tiny perpendicular step, never through a wall), then
-## leaves it through whichever endpoint gives the shorter TOTAL walk to the
-## target. That also kills the back-step: she exits the edge on the side that
-## heads toward the destination.
+## The old version projected her onto the nearest corridor EDGE, then chose
+## whichever of that edge's two endpoints gave the shorter total walk — a lot of
+## machinery to compensate for a sparse hand-authored graph. With a grid there
+## is nothing to compensate for: find the nearest walkable cell to where she is,
+## A* to the prop's anchor cell, and walk the corners.
 static func _set_walk(state: Dictionary, object_id) -> Dictionary:
-	if typeof(object_id) != TYPE_STRING or not D.OBJECTS.has(object_id):
+	if typeof(object_id) != TYPE_STRING or not Level.PROPS.has(object_id):
 		return state
-	if not D.OBJECT_NODE.has(object_id):
+	var anchor := Nav.anchor(object_id)
+	if anchor.is_empty():
 		return state
-	var node_id: String = D.OBJECT_NODE[object_id]
-	var node: Vector2 = D.NODES[node_id]
 
 	var player := _clone_player(state["player"])
-	var edge := _nearest_edge(float(player["x"]), float(player["y"]))
-	var epx := float(edge["px"])
-	var epy := float(edge["py"])
-
-	var best_id: String = ""
-	var best_ids: Array = []
-	var best_total := INF
-	for via_id in [edge["aId"], edge["bId"]]:
-		var ids := _dijkstra(via_id, node_id)
-		var n: Vector2 = D.NODES[via_id]
-		var total := _hyp(epx - float(n.x), epy - float(n.y)) + _path_length_ids(ids)
-		# `<=` so a tie keeps the FIRST endpoint, matching the JS.
-		if total < best_total:
-			best_total = total
-			best_id = via_id
-			best_ids = ids
+	var here := Vector2(float(player["x"]), float(player["y"]))
+	var path := Nav.find_path(here, anchor["cell"])
 
 	var pts := []
-	# Perpendicular hop onto the corridor (skip when she's already on it).
-	if float(edge["d"]) > 6.0:
-		pts.append(_pt(epx, epy))
-	# Then along the edge to the chosen endpoint (skip a null hop).
-	var entry: Vector2 = D.NODES[best_id]
-	if _hyp(epx - float(entry.x), epy - float(entry.y)) > 6.0:
-		pts.append(_pt(float(entry.x), float(entry.y)))
-	for i in range(1, best_ids.size()):
-		var n: Vector2 = D.NODES[best_ids[i]]
-		pts.append(_pt(float(n.x), float(n.y)))
-	if pts.is_empty():
-		pts.append(_pt(float(node.x), float(node.y)))
+	for wp in path:
+		pts.append(_pt(wp.x, wp.y))
+	# Always finish on the anchor itself: A* works in cell centres, and she
+	# should stop exactly where the prop expects her, not one cell short.
+	var goal: Vector2 = anchor["pos"]
+	if pts.is_empty() or absf(float(pts[-1]["x"]) - goal.x) > 0.5 or absf(float(pts[-1]["y"]) - goal.y) > 0.5:
+		pts.append(_pt(goal.x, goal.y))
 
 	# Walking drops any seat lock; a mid-flight work step is ABANDONED — no
 	# progress, no points. The clicked object becomes pendingResolve.
@@ -890,7 +816,7 @@ static func validate_action(state: Dictionary, _player_id: String, action) -> Di
 
 	if type == "click":
 		var obj = action.get("object", null)
-		if typeof(obj) != TYPE_STRING or not D.OBJECTS.has(obj):
+		if typeof(obj) != TYPE_STRING or not Level.PROPS.has(obj):
 			return {"ok": false, "error": "unknown object"}
 		return {"ok": true}
 	if type == "answer":
@@ -1113,8 +1039,8 @@ static func view_for(state: Dictionary, _player_id: String) -> Dictionary:
 		"phone": state["phone"],
 		"tasks": task_views,
 		"taskDefs": D.TASKS,
-		"objects": D.OBJECTS,
-		"stations": D.STATIONS,
+		"objects": _objects_view(),
+		"stations": Level.STATIONS,
 		"lastChainKey": state["lastChainKey"],
 		"history": _take_last(state["history"], 6),
 		"events": _take_last(state["events"], 8),

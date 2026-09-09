@@ -64,7 +64,14 @@ Not starting over. The expensive, verified part is independent of the map.
 
 ## 3. The steps
 
-### Phase A — Foundations. No art. Nothing visual changes.
+### Phase A — Foundations. No art. Nothing visual changes. ✅ DONE
+
+> **Shipped.** `scripts/levels/her_morning.gd` (the level as data),
+> `scripts/nav.gd` (grid, A\*, derived anchors), `scripts/nav_overlay.gd`
+> (press **F3** in game), `tests/nav_test.gd`. `logic.gd` routes through Nav;
+> `logic_data.gd` lost 224 lines of world tables and keeps only rules.
+> **31 tests, 25247 checks, 0 failures.** Anchors inside furniture: 0, derived
+> rather than typed. Grid 120×80, 4009 walkable cells, one connected island.
 
 The whole phase runs against the existing `home.png` as a placeholder, so the
 game stays playable throughout and every change is verifiable before any art
@@ -141,7 +148,16 @@ Ruth's at her feet, and Godot's `y_sort_enabled` handles depth. `props.gd`,
 
 ### Phase D — Retune.
 
-Distances changed, so the numbers tuned against the old map are wrong:
+**Already needed, and measured.** The same automated playthrough that scored
+43/40 with 5 served and 1 missed on the old map now scores **83/40 with 10
+served, 0 missed, in fewer clicks**. Routing got materially more efficient —
+routes were verified clean (3–5 waypoints, no segment passing through
+furniture), so this is real, not a bug. The game is currently far too easy.
+
+Do not fix it yet: retuning against a first-draft floor plan is wasted work.
+It lands after Phase B settles the layout.
+
+The numbers tuned against the old map and now wrong:
 `PLAYER_SPEED`, each task's `patience` and `spawn` window, `ROUND_SECONDS`,
 `TARGET_SCORE`. The smoke test's win/loss margin is the fastest signal.
 
