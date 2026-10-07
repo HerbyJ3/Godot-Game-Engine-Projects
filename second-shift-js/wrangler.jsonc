@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // ── BUILD / DEV CONFIG — NOT the deploy config ───────────────────
+  // Used for local `wrangler dev` and `vitest`. It is NEVER trusted at deploy:
+  // the platform GENERATES an authoritative wrangler.jsonc from trusted metadata
+  // (your app.manifest.json + the app row) and ignores everything here. So
+  // `name` below is just a BUILD-VALID PLACEHOLDER.
+  //
+  // What you DO control is app.manifest.json. This template ships
+  // `"durableObject": "Room"`, which is what gets you `env.ROOMS` in production.
+  "name": "game-slug-placeholder",
+
+  // Bundled by `bun run build` (see scripts/build.mjs). The deploy rediscovers
+  // the built entry and points `main` at it itself.
+  "main": "dist/worker/index.js",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // Static files serve FIRST (so `/` and `/client.js` never reach the Worker);
+  // anything else — notably `/ws` — falls through to it.
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "none"
+  },
+
+  "vars": { "HF_ENV": "dev", "APP_SLUG": "game-slug-placeholder" },
+
+  // The room. `new_sqlite_classes` is required for a new DO class — the SQLite
+  // backend is the only one available to new namespaces, and it is what makes
+  // per-room `ctx.storage` cheap.
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }]
+}

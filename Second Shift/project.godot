@@ -1,0 +1,43 @@
+; Second Shift — Godot 4 port of the browser build.
+;
+; The whole game runs in-engine: `scripts/logic.gd` is the six-function pure
+; ruleset (ported from the original `src/logic.js`), and `Session` is the
+; autoload that replaced the Cloudflare Durable Object that used to host it.
+; Nothing here talks to a network.
+
+config_version=5
+
+[application]
+
+config/name="Second Shift"
+config/description="It's 7:55. The kitchen needs her, the laundry needs her, the phone needs her."
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.4", "GL Compatibility")
+
+[autoload]
+
+Session="*res://scripts/session.gd"
+Sfx="*res://scripts/audio.gd"
+
+[display]
+
+; The world is authored in 960x640 units and logic.gd speaks those units
+; directly, so the viewport matches it exactly and `canvas_items` stretch does
+; the scaling. That is what lets input_router.gd drop the browser client's
+; canvasPoint() rect math entirely.
+window/size/viewport_width=960
+window/size/viewport_height=640
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[gui]
+
+theme/custom_font="res://assets/fonts/Nunito.ttf"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+; Painted art, not pixel art — linear filtering everywhere.
+textures/canvas_textures/default_texture_filter=1
+environment/defaults/default_clear_color=Color(0.952941, 0.913725, 0.823529, 1)
