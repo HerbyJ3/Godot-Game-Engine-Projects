@@ -157,6 +157,27 @@ furniture), so this is real, not a bug. The game is currently far too easy.
 Do not fix it yet: retuning against a first-draft floor plan is wasted work.
 It lands after Phase B settles the layout.
 
+### Measured walking distances — the input Phase D actually needs
+
+Anchor to anchor, A\* over the grid, after the Phase B geometry work:
+
+| Chain | Walked steps | Travel | At 168 px/s |
+|---|---|---|---|
+| diaper | 5 | 752 px | ~4.5 s |
+| cooking | 5 | 400 px | ~2.4 s |
+| laundry | 9 | **144 px** | ~0.9 s |
+| email | 4 | 72 px | ~0.4 s |
+
+**The laundry chain is the longest in the game — eleven steps, two machine
+timers — and involves almost no walking.** Basket, washer, detergent and dryer
+are all within a few metres of each other, so nine of those steps are clicks in
+place. The diaper chain now costs five times the travel for fewer steps.
+
+That imbalance is a large part of why the game plays so easily, and it is a
+*layout* problem as much as a tuning one. Before reaching for `patience` and
+`spawn` numbers, consider whether the laundry stations should be further apart —
+a chain's difficulty here is mostly the distance between its steps.
+
 The numbers tuned against the old map and now wrong:
 `PLAYER_SPEED`, each task's `patience` and `spawn` window, `ROUND_SECONDS`,
 `TARGET_SCORE`. The smoke test's win/loss margin is the fastest signal.
