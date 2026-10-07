@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Texture2D" path="res://assets/art/home.png" id="2_home"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/foreground.gd" id="5_fg"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="6_hud"]
 [ext_resource type="Script" path="res://scripts/nav_overlay.gd" id="7_nav"]
+[ext_resource type="Script" path="res://scripts/blockout.gd" id="8_blockout"]
 
 [node name="Main" type="Node2D"]
 process_mode = 3
@@ -17,6 +18,9 @@ script = ExtResource("1_main")
 [node name="Background" type="Sprite2D" parent="World"]
 centered = false
 texture = ExtResource("2_home")
+
+[node name="Blockout" type="Node2D" parent="World"]
+script = ExtResource("8_blockout")
 
 [node name="Overlays" type="Node2D" parent="World"]
 script = ExtResource("3_world")
