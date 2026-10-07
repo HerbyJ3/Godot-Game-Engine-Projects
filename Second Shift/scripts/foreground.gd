@@ -24,7 +24,7 @@ const Props := preload("res://scripts/props.gd")
 ## The client-drawn nursery props (crib, changing table, pail) are not in the
 ## painted image at all — `world.gd` draws them — so they occlude her the same
 ## way, off their shared floor line.
-const NURSERY_BASE_Y := 567.0
+const NURSERY_BASE_Y := 575.0
 
 @onready var game: Node = owner
 

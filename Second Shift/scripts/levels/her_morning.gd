@@ -39,12 +39,19 @@ const WORLD := Vector2(960, 640)
 ## `tests/nav_test.gd` fails loudly rather than letting it ship.
 const FLOORS := {
 	"kitchen": Rect2(65, 190, 367, 105),
-	"hall": Rect2(432, 20, 86, 605),
+	# The hall now ends at the nursery rather than running to the bottom edge;
+	# everything below y=520 down there was dead space nothing could use.
+	"hall": Rect2(432, 20, 86, 500),
 	"office": Rect2(518, 190, 382, 105),
 	"laundry": Rect2(60, 355, 315, 245),
 	"laundryLink": Rect2(370, 450, 66, 60),
 	"living": Rect2(578, 330, 352, 270),
 	"livingLink": Rect2(514, 450, 70, 60),
+	# The nursery: a terminal room off the bottom of the hall, wider than the
+	# hall so the three props sit in a row with a lane in front of them. The
+	# crib, changing table and pail used to straddle the laundry/hall boundary
+	# because they were drawn as an overlay and never belonged to a room.
+	"nursery": Rect2(375, 498, 200, 77),
 }
 
 ## Rooms, for the HUD and for grouping demands. Purely descriptive.
@@ -150,23 +157,24 @@ const PROPS := {
 	},
 	"crib": {
 		"label": "Crib", "station": "laundry", "approach": "north",
-		"foot": Rect2(296, 523, 68, 44), "blocks": true,
-		"art": Rect2(292, 518, 76, 54), "hit": Vector2(80, 60),
+		"foot": Rect2(392, 530, 68, 45), "blocks": true,
+		"art": Rect2(388, 520, 76, 58), "hit": Vector2(80, 60),
 	},
 	"changingTable": {
 		"label": "Changing table", "station": "laundry", "approach": "north",
-		"foot": Rect2(385, 527, 60, 36), "blocks": true,
-		"art": Rect2(382, 520, 66, 48), "hit": Vector2(70, 56),
+		"foot": Rect2(460, 534, 60, 41), "blocks": true,
+		"art": Rect2(456, 524, 68, 54), "hit": Vector2(70, 56),
 	},
 	"diaperDrawer": {
 		"label": "Diaper drawer", "station": "laundry", "approach": "north",
-		"foot": Rect2(385, 527, 60, 36), "blocks": false,
-		"art": Rect2(390, 528, 50, 20), "hit": Vector2(44, 44),
+		# under the changing table, so it borrows its host's foot
+		"foot": Rect2(460, 534, 60, 41), "blocks": false,
+		"art": Rect2(468, 536, 48, 20), "hit": Vector2(44, 44),
 	},
 	"bin": {
 		"label": "Diaper pail", "station": "laundry", "approach": "north",
-		"foot": Rect2(448, 523, 28, 44), "blocks": true,
-		"art": Rect2(444, 518, 36, 54), "hit": Vector2(44, 48),
+		"foot": Rect2(520, 530, 31, 45), "blocks": true,
+		"art": Rect2(516, 520, 39, 58), "hit": Vector2(44, 48),
 	},
 
 	# ── OFFICE ─────────────────────────────────────────────────────────────
