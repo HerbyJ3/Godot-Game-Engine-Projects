@@ -41,6 +41,26 @@ func test_no_anchor_sits_inside_furniture() -> void:
 				"the anchor for `%s` at (%d,%d) is inside `%s`" % [id, pos.x, pos.y, other])
 
 
+func test_scenery_blocks_without_stranding_anything() -> void:
+	# Scenery is the one thing that can silently break the map: it subtracts
+	# walkable cells but has no anchor of its own, so a badly placed chair
+	# strands a prop with nothing in the level data obviously wrong. The
+	# connectivity and reachability tests above are the real guard; this one
+	# names the culprit when they fail.
+	for id in Level.SCENERY:
+		var item: Dictionary = Level.SCENERY[id]
+		var foot: Rect2 = item["foot"]
+		gt(foot.size.x, 0.0, "scenery `%s` has no footprint width" % id)
+		gt(foot.size.y, 0.0, "scenery `%s` has no footprint height" % id)
+		check(Rect2(Vector2.ZERO, Level.WORLD).encloses(item["art"]),
+			"scenery `%s` art runs outside the world" % id)
+		# Nothing she must stand on may be inside a piece of scenery.
+		for prop_id in Level.PROPS:
+			var pos: Vector2 = Nav.anchor(prop_id)["pos"]
+			check(not foot.has_point(pos),
+				"scenery `%s` covers the anchor for `%s` at (%d,%d)" % [id, prop_id, pos.x, pos.y])
+
+
 func test_every_anchor_is_walkable_and_near_its_prop() -> void:
 	for id in Level.PROPS:
 		var a := Nav.anchor(id)

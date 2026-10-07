@@ -55,6 +55,13 @@ func _draw() -> void:
 		draw_rect(r, Color(0.3, 0.8, 1.0, 0.9), false, 2.0)
 		U.text(self, k, r.position.x + 4, r.position.y + 10, 10, 700, Color(0.3, 0.8, 1.0))
 
+	# scenery: blocks the grid, has no anchor. Distinct colour so an unexplained
+	# hole in the walkable cells is traceable to the thing that made it.
+	for id in Level.SCENERY:
+		var s_foot: Rect2 = Level.SCENERY[id]["foot"]
+		draw_rect(s_foot, Color(0.70, 0.35, 0.90, 0.95), false, 2.0)
+		U.text(self, id, s_foot.position.x + 2, s_foot.position.y - 4, 8, 700, Color(0.55, 0.20, 0.75))
+
 	# props: blocking footprints solid, non-blocking dashed-ish
 	for id in Level.PROPS:
 		var prop: Dictionary = Level.PROPS[id]

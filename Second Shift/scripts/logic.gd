@@ -218,6 +218,17 @@ static func _inside_footprint(x: float, y: float) -> Variant:
 			and y - D.FOOT_RY < f.end.y
 		):
 			return f
+	# Scenery — blocking geometry with no interaction. A* already routes around
+	# it, so this is the safety net for a straight-line step between waypoints.
+	for id in Level.SCENERY:
+		var s: Rect2 = Level.SCENERY[id]["foot"]
+		if (
+			x + D.FOOT_RX > s.position.x
+			and x - D.FOOT_RX < s.end.x
+			and y + D.FOOT_RY > s.position.y
+			and y - D.FOOT_RY < s.end.y
+		):
+			return s
 	return null
 
 

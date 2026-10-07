@@ -78,6 +78,14 @@ static func _ensure() -> void:
 					if (prop["foot"] as Rect2).grow_individual(FOOT_RX, FOOT_RY, FOOT_RX, FOOT_RY).has_point(p):
 						on_floor = false
 						break
+			if on_floor:
+				# Scenery blocks the grid exactly like a prop; it simply has no
+				# anchor, because there is nothing to stand at it for.
+				for id in Level.SCENERY:
+					var item: Dictionary = Level.SCENERY[id]
+					if (item["foot"] as Rect2).grow_individual(FOOT_RX, FOOT_RY, FOOT_RX, FOOT_RY).has_point(p):
+						on_floor = false
+						break
 			_walkable[cy * _cols + cx] = 1 if on_floor else 0
 
 	_build_anchors()

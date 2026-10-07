@@ -55,6 +55,20 @@ const STATIONS := {
 	"armchair": {"key": "armchair", "label": "Living room"},
 }
 
+## Blocking geometry with no interaction: furniture she must walk around but
+## can never use. Separate from PROPS on purpose — everything in PROPS becomes
+## a clickable with a derived stand-at anchor and a place in the reachability
+## tests, and a dining chair wants none of that. It only needs to exist in the
+## walkable grid and in collision.
+##
+## Before these were modelled, nothing knew the chairs were there: the sink's
+## access node had to be nudged sideways by hand to x=380 to dodge one, which
+## is precisely the kind of workaround the derived map was built to eliminate.
+const SCENERY := {
+	"diningChairW": {"foot": Rect2(186, 268, 44, 34), "art": Rect2(185, 217, 43, 85)},
+	"diningChairE": {"foot": Rect2(310, 268, 44, 34), "art": Rect2(310, 212, 43, 90)},
+}
+
 const PROPS := {
 	# ── KITCHEN ────────────────────────────────────────────────────────────
 	"fridge": {
@@ -86,12 +100,19 @@ const PROPS := {
 	},
 	"table": {
 		"label": "Dining table", "station": "kitchen", "approach": "west",
-		"foot": Rect2(230, 228, 70, 50), "blocks": true,
+		# Extends to the kitchen floor's bottom edge rather than stopping at the
+		# tabletop. With a chair sealing each side, the strip between table and
+		# wall is unreachable floor — modelling it as blocked keeps the dining
+		# set one solid obstacle instead of leaving an 18-cell dead pocket that
+		# split the house into two islands.
+		"foot": Rect2(230, 228, 70, 70), "blocks": true,
 		"art": Rect2(222, 214, 86, 74), "hit": Vector2(90, 62),
 	},
 	"formula": {
 		"label": "Kitchen table", "station": "kitchen", "approach": "west",
-		"foot": Rect2(230, 228, 70, 50), "blocks": false,
+		# Same physical table as `table` above, so it must borrow the same foot
+		# — otherwise the two derive anchors 8px apart for one object.
+		"foot": Rect2(230, 228, 70, 70), "blocks": false,
 		"art": Rect2(222, 214, 86, 74), "hit": Vector2(44, 44),
 	},
 	"baby": {
@@ -151,8 +172,12 @@ const PROPS := {
 	# ── OFFICE ─────────────────────────────────────────────────────────────
 	"deskChair": {
 		"label": "Desk chair", "station": "office", "approach": "south",
-		"foot": Rect2(655, 150, 42, 20), "blocks": true,
-		"art": Rect2(642, 135, 62, 70), "hit": Vector2(44, 58),
+		# Measured off home.png: the five-star wheelbase meets the floor at
+		# x 662-702, y 197-222. The old foot was y 150-170 — the SEAT height,
+		# ~30px too high — which derived her anchor to (676,196), sitting her
+		# visually on the chair she was meant to be standing beside.
+		"foot": Rect2(662, 197, 40, 25), "blocks": true,
+		"art": Rect2(654, 148, 52, 76), "hit": Vector2(44, 58),
 	},
 	"monitor": {
 		"label": "Monitor", "station": "office", "approach": "south",

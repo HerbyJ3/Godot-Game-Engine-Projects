@@ -115,6 +115,19 @@ func _draw() -> void:
 		draw_rect(art, Color(0.18, 0.15, 0.12, 0.75), false, 1.5)
 		U.text(self, id, art.position.x + 3, art.position.y + 9, 9, 700, Color(0.12, 0.10, 0.08))
 
+	# ── scenery: blocks her, but nothing to click. Drawn in a cooler red so a
+	# reviewer can tell at a glance why she is walking around something that
+	# has no label and no anchor.
+	for id in Level.SCENERY:
+		var item: Dictionary = Level.SCENERY[id]
+		var s_art: Rect2 = item["art"]
+		var s_foot: Rect2 = item["foot"]
+		draw_rect(s_foot, Color(0.62, 0.36, 0.72, 0.55))
+		draw_rect(s_foot, Color(0.38, 0.18, 0.46), false, 1.5)
+		draw_rect(s_art, Color(0.18, 0.15, 0.12, 0.12))
+		draw_rect(s_art, Color(0.38, 0.18, 0.46, 0.55), false, 1.0)
+		U.text(self, id, s_art.position.x + 3, s_art.position.y + 9, 9, 600, Color(0.30, 0.12, 0.38))
+
 	_draw_legend()
 
 
