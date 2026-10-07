@@ -110,7 +110,17 @@ gets rewritten against the new format.
 > reference. From A3 onward the GDScript tests are the regression net, which is
 > why A6 is not optional.
 
-### Phase B — Layout. Still no art.
+### Phase B — Layout. Still no art. 🔶 STRUCTURAL WORK DONE
+
+> **Shipped.** Blockout mode (`scripts/blockout.gd`, **F4** in game, or
+> `smoke.gd -- <dir> blockout` for a full automated round). `deskChair`'s
+> footprint corrected. Dining chairs modelled as `SCENERY` — blocking geometry
+> with no interaction. The nursery given its own room off the bottom of the
+> hall. 32 tests, 25469 checks, 0 failures; grid one island.
+>
+> **Still open, and it wants a human eye:** `FLOORS` accuracy. The rects are
+> connected and working but still first-draft, and the blockout makes the real
+> question visible — see below.
 
 **B1. Author the floor plan** for Her Morning in the new format. Start from the
 current layout as a first draft — the room arrangement is fine, it is the
@@ -118,7 +128,16 @@ coordinates that were never trustworthy.
 
 **B2. Iterate against the overlay** until walkability and flow are right.
 
-**B3. Play it as coloured boxes.** Rooms as flat colour, props as labelled
+**B3. Play it as coloured boxes.** Now possible:
+`xvfb-run -a godot --path . --rendering-driver opengl3 --script res://tools/smoke.gd -- /tmp/b3 blockout`
+
+A full round completes. What it shows, which no test could:
+the **laundry and living rooms are mostly empty floor** with their props
+clustered into one corner, while the **kitchen and office are thin 105px
+bands** against their walls. That is the same finding as the distance table —
+the laundry chain is nine steps and 144px because basket, washer, detergent and
+dryer are all in one corner of a large room.
+ Rooms as flat colour, props as labelled
 rectangles, Ruth as she is. Run full 150-second rounds. *Done when:* the loop
 is fun and the distances feel right **before any art is commissioned.**
 

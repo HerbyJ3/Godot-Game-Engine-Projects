@@ -28,10 +28,19 @@ var _shots := 0
 var _clicks := 0
 
 
+## Pass `blockout` as an extra arg to play the round with the painted art
+## hidden and the level drawn as flat coloured boxes. That is the ROADMAP
+## Phase B3 gate: judging the LAYOUT without the art carrying the judgement.
+var _blockout := false
+
+
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.size() > 0:
-		_out_dir = args[0]
+	for a in args:
+		if String(a) == "blockout":
+			_blockout = true
+		elif _out_dir == "/tmp/shots":
+			_out_dir = String(a)
 	_run.call_deferred()
 
 
@@ -74,6 +83,15 @@ func _run() -> void:
 	_scene = load("res://main.tscn").instantiate()
 	root.add_child(_scene)
 	await process_frame
+
+	if _blockout:
+		var bo := _scene.get_node_or_null("World/Blockout")
+		if bo == null:
+			printerr("SMOKE FAIL: blockout requested but World/Blockout is missing")
+			quit(1)
+			return
+		bo.set_shown(true)
+		print("SMOKE blockout mode ON — judging layout, not art")
 
 	# Dismiss the title card the way a player does.
 	_scene.started = true
